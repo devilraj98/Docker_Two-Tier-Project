@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_mysqldb import MySQL
 
@@ -14,16 +15,26 @@ app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB', 'default_db')
 mysql = MySQL(app)
 
 def init_db():
-    with app.app_context():
-        cur = mysql.connection.cursor()
-        cur.execute('''
-        CREATE TABLE IF NOT EXISTS messages (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            message TEXT
-        );
-        ''')
-        mysql.connection.commit()  
-        cur.close()
+    retries = int(os.environ.get('DB_INIT_RETRIES', 20))
+    delay_seconds = int(os.environ.get('DB_INIT_DELAY', 2))
+
+    for attempt in range(1, retries + 1):
+        try:
+            with app.app_context():
+                cur = mysql.connection.cursor()
+                cur.execute('''
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    message TEXT
+                );
+                ''')
+                mysql.connection.commit()
+                cur.close()
+            return
+        except Exception:
+            if attempt == retries:
+                raise
+            time.sleep(delay_seconds)
 
 @app.route('/')
 def hello():

@@ -1,167 +1,461 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask App</title>
+    <title>Two-Tier Message Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body, h1, p, form, input {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --bg: #f4efe6;
+            --ink: #1f2933;
+            --muted: #5f6c77;
+            --panel: rgba(255, 255, 255, 0.84);
+            --panel-border: rgba(255, 255, 255, 0.72);
+            --accent: #0f766e;
+            --accent-strong: #115e59;
+            --highlight: #f97316;
+            --ring: rgba(15, 118, 110, 0.2);
+            --shadow-soft: 0 22px 54px rgba(31, 41, 51, 0.16);
+            --shadow-card: 0 10px 24px rgba(31, 41, 51, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            background-color: #121212;
-            color: #e0e0e0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0;
             min-height: 100vh;
+            font-family: "Manrope", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 16% 18%, #fde68a 0, #fde68a 12%, transparent 35%),
+                radial-gradient(circle at 88% 24%, #bfdbfe 0, #bfdbfe 10%, transparent 36%),
+                radial-gradient(circle at 70% 82%, #fbcfe8 0, #fbcfe8 12%, transparent 40%),
+                linear-gradient(135deg, #f8f3e9 0%, #dbeafe 52%, #fde7c6 100%);
+            padding: 32px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .orb {
+            position: fixed;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            filter: blur(18px);
+            opacity: 0.48;
+            z-index: 0;
+            animation: drift 12s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .orb-one {
+            background: #99f6e4;
+            left: -86px;
+            top: -52px;
+        }
+
+        .orb-two {
+            background: #fed7aa;
+            right: -62px;
+            bottom: -82px;
+            animation-delay: 2s;
+        }
+
+        .app-shell {
+            position: relative;
+            z-index: 1;
+            width: min(1080px, 100%);
+            border-radius: 28px;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(10px);
+            display: grid;
+            grid-template-columns: 0.95fr 1.35fr;
             overflow: hidden;
         }
 
-        .container {
-            max-width: 800px;
-            width: 100%;
-            margin: 20px auto;
-            padding: 30px;
-            background-colP0+r\P0+r\or: #1e1e1e;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            transition: box-shadow 0.3s ease, transform 0.3s ease;
-        }
-
-        .container:hover {
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            transform: translateY(-5px);
-        }
-
-        h1 {
-            color: #ff9800;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            text-align: center;
-            font-size: 1.8rem;
-        }
-
-        p {
-            color: #ccc;
-            margin-bottom: 15px;
-            font-size: 1rem;
-        }
-
-        form {
+        .hero {
+            padding: 44px 36px 38px;
+            background:
+                linear-gradient(145deg, rgba(15, 118, 110, 0.94), rgba(17, 94, 89, 0.88)),
+                linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
+            color: #f0fdfa;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 24px;
         }
 
-        input[type="text"] {
-            padding: 12px;
-            border: 1px solid #333;
-            background-color: #2c2c2c;
-            color: #fff;
-            border-radius: 4px;
-            font-size: 16px;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        .badge {
+            width: fit-content;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            border-radius: 999px;
+            padding: 8px 12px;
         }
 
-        input[type="text"]:hover, input[type="text"]:focus {
-            border-color: #ff9800;
-            box-shadow: 0 0 8px rgba(255, 152, 0, 0.25);
+        .hero h1 {
+            margin: 0;
+            font-size: clamp(1.74rem, 2.8vw, 2.32rem);
+            line-height: 1.14;
+            font-weight: 800;
         }
 
-        input[type="submit"] {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #ff9800, #e65100);
-            color: #fff;
+        .hero p {
+            margin: 0;
+            color: rgba(240, 253, 250, 0.9);
+            line-height: 1.62;
+        }
+
+        .metric {
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 18px 16px;
+            margin-top: auto;
+        }
+
+        .metric-label {
+            display: block;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            opacity: 0.88;
+        }
+
+        .metric-value {
+            font-family: "IBM Plex Mono", monospace;
+            font-size: clamp(1.6rem, 3vw, 2rem);
+            font-weight: 500;
+        }
+
+        .workspace {
+            padding: 34px 34px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .workspace h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        .composer {
+            display: flex;
+            gap: 10px;
+        }
+
+        .composer input {
+            flex: 1;
+            border: 1px solid #c5d1dc;
+            background: rgba(255, 255, 255, 0.84);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            font-family: inherit;
+            color: var(--ink);
+            transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+        }
+
+        .composer input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--ring);
+            transform: translateY(-1px);
+        }
+
+        .composer button {
             border: none;
-            border-radius: 4px;
+            border-radius: 12px;
+            padding: 0 20px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #fff;
+            background: linear-gradient(135deg, var(--highlight), #ea580c);
+            box-shadow: 0 8px 16px rgba(249, 115, 22, 0.28);
             cursor: pointer;
-            transition: background 0.3s ease, transform 0.3s ease, box-shP0+r\P0+r\P0+r\P0+r\P0+r\adow 0.3s ease;
-            font-size: 16px;
+            transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
         }
 
-        input[type="submit"]:hover {
-            background: linear-gradient(135deg, #e65100, #ff9800);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        .composer button:hover {
             transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(249, 115, 22, 0.3);
+            filter: saturate(1.08);
         }
 
-        input[type="submit"]:active {
+        .composer button:active {
             transform: translateY(0);
+        }
+
+        .composer button:disabled {
+            cursor: wait;
+            opacity: 0.75;
+            transform: none;
             box-shadow: none;
         }
 
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-                margin: 10px;
+        .messages {
+            margin: 0;
+            padding: 2px 3px 4px;
+            max-height: 360px;
+            overflow-y: auto;
+            display: grid;
+            gap: 12px;
+        }
+
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background: rgba(95, 108, 119, 0.35);
+        }
+
+        .message-card,
+        .empty-state {
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid #dde5ee;
+            box-shadow: var(--shadow-card);
+            padding: 14px 15px;
+            animation: card-in 360ms ease;
+        }
+
+        .message-card {
+            position: relative;
+            line-height: 1.55;
+            color: #243241;
+            font-size: 15px;
+            overflow-wrap: anywhere;
+        }
+
+        .message-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, var(--accent), #0ea5e9);
+        }
+
+        .message-text {
+            display: block;
+            padding-left: 12px;
+        }
+
+        .empty-state {
+            color: var(--muted);
+            font-size: 14px;
+            border-style: dashed;
+            background: rgba(255, 255, 255, 0.66);
+            box-shadow: none;
+        }
+
+        .error-note {
+            min-height: 18px;
+            color: #b42318;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        @keyframes card-in {
+            from {
+                opacity: 0;
+                transform: translateY(7px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes drift {
+            0%, 100% {
+                transform: translate3d(0, 0, 0);
+            }
+            50% {
+                transform: translate3d(0, 16px, 0);
+            }
+        }
+
+        @media (max-width: 960px) {
+            .app-shell {
+                grid-template-columns: 1fr;
             }
 
-            h1 {
-                font-size: 1.5rem;
+            .hero {
+                padding: 30px 24px 26px;
+                gap: 18px;
             }
 
-            p {
-                font-size: 0.9rem;
+            .metric {
+                margin-top: 0;
+                width: fit-content;
+                min-width: 160px;
             }
 
-            input[type="text"], input[type="submit"] {
-                font-size: 14px;
+            .workspace {
+                padding: 26px 22px 24px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            body {
+                padding: 18px 10px;
+            }
+
+            .composer {
+                flex-direction: column;
+            }
+
+            .composer button {
+                width: 100%;
+                height: 46px;
+            }
+
+            .messages {
+                max-height: 320px;
             }
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>Hello Dosto,<br>Let's make a 2 Tier Application with Flask and MYSQL!</h1>
-        <div class="messages">
-            {% for message in messages %}
-                <p>{{ message[0] }}</p>
-            {% endfor %}
-        </div>
+    <span class="orb orb-one" aria-hidden="true"></span>
+    <span class="orb orb-two" aria-hidden="true"></span>
+    <main class="app-shell">
+        <section class="hero">
+            <span class="badge">Flask + MySQL</span>
+            <h1>Two-tier message board for your Docker app</h1>
+            <p>Post messages instantly and watch them sync to the database in real time through your Flask backend.</p>
+            <div class="metric">
+                <span class="metric-label">Saved messages</span>
+                <span class="metric-value" id="totalMessages">{{ messages|length }}</span>
+            </div>
+        </section>
 
-        <form id="messageForm">
-            <input type="text" name="new_message" placeholder="Enter a new message">
-            <input type="submit" value="Submit">
-        </form>
-    </div>
+        <section class="workspace">
+            <h2>Share a new message</h2>
+            <form id="messageForm" class="composer" novalidate>
+                <input type="text" name="new_message" placeholder="Type your message here..." maxlength="500" autocomplete="off" required>
+                <button type="submit" id="submitBtn">Publish</button>
+            </form>
+            <p class="error-note" id="errorNote"></p>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <div class="messages" id="messageList" aria-live="polite">
+                {% if messages %}
+                    {% for message in messages %}
+                        <article class="message-card">
+                            <span class="message-text">{{ message[0] }}</span>
+                        </article>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-state" data-empty-state>No messages yet. Add the first one.</p>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
     <script>
-        $(document).ready(function() {
-            $("#messageForm").on("submit", function(event) {
-                event.preventDefault(); // Prevent the form from submitting the traditional way
+        (function () {
+            const form = document.getElementById("messageForm");
+            const input = form.querySelector("input[name='new_message']");
+            const messageList = document.getElementById("messageList");
+            const submitBtn = document.getElementById("submitBtn");
+            const totalMessages = document.getElementById("totalMessages");
+            const errorNote = document.getElementById("errorNote");
 
-                $.ajax({
-                    url: "/submit",
-                    type: "POST",
-                    data: {
-                        new_message: $("input[name='new_message']").val()
+            function createMessageCard(text) {
+                const card = document.createElement("article");
+                card.className = "message-card";
+
+                const span = document.createElement("span");
+                span.className = "message-text";
+                span.textContent = text;
+
+                card.appendChild(span);
+                return card;
+            }
+
+            function clearEmptyState() {
+                const emptyState = messageList.querySelector("[data-empty-state]");
+                if (emptyState) {
+                    emptyState.remove();
+                }
+            }
+
+            function bumpMessageCount() {
+                const current = Number(totalMessages.textContent || "0");
+                totalMessages.textContent = String(current + 1);
+            }
+
+            async function submitMessage(messageText) {
+                const response = await fetch("/submit", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
                     },
-                    success: function(response) {
-                        if (response && response.message) {
-                            // Append the new message to the list of messages
-                            $(".messages").append("<p>" + response.message + "</p>");
-                            // Clear the input field
-                            $("input[name='new_message']").val("");
-                        } else {
-                            console.error("Unexpected response format:", response);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("AJAX Error:", status, error);
-                    }
+                    body: new URLSearchParams({ new_message: messageText })
                 });
+
+                if (!response.ok) {
+                    throw new Error("Request failed");
+                }
+
+                return response.json();
+            }
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault();
+                errorNote.textContent = "";
+
+                const messageText = input.value.trim();
+                if (!messageText) {
+                    errorNote.textContent = "Message cannot be empty.";
+                    return;
+                }
+
+                submitBtn.disabled = true;
+
+                try {
+                    const data = await submitMessage(messageText);
+                    if (!data || !data.message) {
+                        throw new Error("Unexpected response");
+                    }
+
+                    clearEmptyState();
+                    messageList.appendChild(createMessageCard(data.message));
+                    bumpMessageCount();
+                    input.value = "";
+                    input.focus();
+                    messageList.scrollTop = messageList.scrollHeight;
+                } catch (error) {
+                    errorNote.textContent = "Could not publish message. Please try again.";
+                } finally {
+                    submitBtn.disabled = false;
+                }
             });
-        });
+        })();
     </script>
 </body>
-
 </html>
 

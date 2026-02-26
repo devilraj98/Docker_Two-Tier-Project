@@ -1,52 +1,40 @@
-version: "3.8"
-
-services: 
-  mysql:
-    container_name: mysql
-    image: mysql
-    environment:
-      MYSQL_DATABASE: "devops"
-      MYSQL_ROOT_PASSWORD: "root"
-    ports:
-      - "3306:3306"
-    volumes: 
-      - mysql-data:/var/lib/mysql
-    networks:
-      - mynetwork
-    restart: always
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-
-  flask:
-    image: neeraj98/two-tier-flask-app
-    container_name: two-tier-app
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flaskapp
     ports:
       - "5000:5000"
     environment:
       MYSQL_HOST: mysql
       MYSQL_USER: root
-      MYSQL_PASSWORD: root
-      MYSQL_DB: devops
+      MYSQL_PASSWORD: admin
+      MYSQL_DB: mydb
+      DB_INIT_RETRIES: 30
+      DB_INIT_DELAY: 2
     depends_on:
-      - mysql
-    networks:
-      - mynetwork
-    restart: always
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: mydb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
-      interval: 10s
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
       timeout: 5s
-      retries: 5
-      start_period: 60s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
 volumes:
   mysql-data:
-
-networks:
-  mynetwork:
-
-
-    
