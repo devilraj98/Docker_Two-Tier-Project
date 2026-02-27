@@ -361,17 +361,7 @@
             </form>
             <p class="error-note" id="errorNote"></p>
 
-            <div class="messages" id="messageList" aria-live="polite">
-                {% if messages %}
-                    {% for message in messages %}
-                        <article class="message-card">
-                            <span class="message-text">{{ message[0] }}</span>
-                        </article>
-                    {% endfor %}
-                {% else %}
-                    <p class="empty-state" data-empty-state>No messages yet. Add the first one.</p>
-                {% endif %}
-            </div>
+
         </section>
     </main>
 
@@ -379,29 +369,10 @@
         (function () {
             const form = document.getElementById("messageForm");
             const input = form.querySelector("input[name='new_message']");
-            const messageList = document.getElementById("messageList");
+
             const submitBtn = document.getElementById("submitBtn");
             const totalMessages = document.getElementById("totalMessages");
             const errorNote = document.getElementById("errorNote");
-
-            function createMessageCard(text) {
-                const card = document.createElement("article");
-                card.className = "message-card";
-
-                const span = document.createElement("span");
-                span.className = "message-text";
-                span.textContent = text;
-
-                card.appendChild(span);
-                return card;
-            }
-
-            function clearEmptyState() {
-                const emptyState = messageList.querySelector("[data-empty-state]");
-                if (emptyState) {
-                    emptyState.remove();
-                }
-            }
 
             function bumpMessageCount() {
                 const current = Number(totalMessages.textContent || "0");
@@ -442,12 +413,9 @@
                         throw new Error("Unexpected response");
                     }
 
-                    clearEmptyState();
-                    messageList.appendChild(createMessageCard(data.message));
                     bumpMessageCount();
                     input.value = "";
                     input.focus();
-                    messageList.scrollTop = messageList.scrollHeight;
                 } catch (error) {
                     errorNote.textContent = "Could not publish message. Please try again.";
                 } finally {
